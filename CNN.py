@@ -70,7 +70,7 @@ class LeNet5 ():
     self.FC2 = nn_layer.FC (120, 84)
     self.ReLU4 = activation.ReLU ()
     self.FC3 = nn_layer.FC (84, self.D_out)
-    self.Softmax = activation.Softmax ()
+    # self.Softmax = activation.Softmax ()
 
     self.p2_shape = None
 
@@ -91,8 +91,8 @@ class LeNet5 ():
     h4 = self.FC2._forward(a3)
     a5 = self.ReLU4._forward(h4)
     h5 = self.FC3._forward(a5)
-    a5 = self.Softmax._forward(h5)
-    return a5
+    # a5 = self.Softmax._forward(h5)
+    return h5
 
   def backward (self, dout):
     #dout = self.Softmax._backward(dout)
