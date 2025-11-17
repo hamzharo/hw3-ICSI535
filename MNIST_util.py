@@ -1,6 +1,10 @@
 
 import numpy as np
 import pickle
+import os
+from urllib import request
+import gzip
+from skimage import io
 
 # ========== Download Load/Save MNIST - Begin ==========
 
@@ -12,7 +16,7 @@ filename = [
 ]
 
 def download_mnist():
-  base_url = 'http://yann.lecun.com/exdb/mnist/'
+  base_url = 'https://storage.googleapis.com/cvdf-datasets/mnist/'
   for name in filename:
     print('Downloading '+name[1]+'...')
     request.urlretrieve(base_url+name[1], name[1])

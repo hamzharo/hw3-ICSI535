@@ -58,9 +58,11 @@ class MNIST_Trainer ():
     ############  TODO   ##################
     #######################################
       # H1, H2 are the size of the two hidden layers.
-      #self.model = ANN.ThreeLayerNet (self.D_in, H1, H2, self.D_out)
-      print('Not Implemented.')
-      exit(0)
+      H1 = 300
+      H2 = 100
+      self.model = ANN.ThreeLayerNet (self.D_in, H1, H2, self.D_out)
+      # print('Not Implemented.')
+      # exit(0)
     elif Net == 'LeNet5':
       self.model = CNN.LeNet5 ()
 
@@ -127,52 +129,64 @@ def determine_Test_Acc (model, X_test, Y_test):
     % (n_correct, n_total, Acc))
   return Acc
 
-# ========== Evaluation - End ==========
+
+## ========== Evaluation - End ==========
 
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()
-  parser.add_argument('-model', dest='model', default='TwoLayerNet', choices=['TwoLayerNet', 'ThreeLayerNet', 'LeNet5'], help="Select the NeuralNet model")
-  parser.add_argument('-iter', dest='iter', default=25000, type=int, help="Training iterations")
-  parser.add_argument('-opti', dest='opti', default='SGDMomentum', choices=['SGDMomentum', 'SGD'], help="Select optimizer")
+  parser.add_argument('-model', dest='model', default='TwoLayerNet',
+                      choices=['TwoLayerNet', 'ThreeLayerNet', 'LeNet5'],
+                      help="NeuralNet model (default: TwoLayerNet)")
+  parser.add_argument('-iter', dest='iter', default=25000, type=int,
+                      help="Training iterations (default: 25000)")
+  parser.add_argument('-opti', dest='opti', default='SGDMomentum',
+                      choices=['SGDMomentum', 'SGD'],
+                      help="Optimizer (default: SGDMomentum)")
   args = parser.parse_args()
 
-
-  X_train, Y_train, X_test, Y_test = MNIST_util.MNIST_preparation ()
+  # --- Data Preparation ---
+  X_train, Y_train, X_test, Y_test = MNIST_util.MNIST_preparation()
 
   # Net: TwoLayerNet, ThreeLayerNet, LeNet5
-  if args.model == 'TwoLayerNet':
-    Net = 'TwoLayerNet'
-  if args.model == 'ThreeLayerNet':
-    Net = 'ThreeLayerNet'
+
   if args.model == 'LeNet5':
-    Net = 'LeNet5'
     img_shape = (1, 28, 28)
     X_train = X_train.reshape(-1, *img_shape)
     X_test = X_test.reshape(-1, *img_shape)
+    if args.iter == 25000:  # Only override if using default
+      args.iter = 2000
 
+  # --- Training ---
+  print(f"\n=== Training Configuration ===")
+  print(f"Model: {args.model}")
+  print(f"Optimizer: {args.opti}")
+  print(f"Iterations: {args.iter}\n")
 
-  # optim: SGD, SGDMomentum
-  opti = args.opti
-  trainer = MNIST_Trainer (X_train, Y_train, Net, opti)
+  trainer = MNIST_Trainer(X_train, Y_train, args.model, args.opti)
+  model = trainer.Train(args.iter)
 
-  #For 25000 iter TwoLayerNet, we should get train Acc 0.937983, test Acc 0.938700
-  #For 25000 iter ThreeLayerNet, we should get train Acc 0.953133, test Acc 0.952500
-  #For 1000 iter LeNet5, we should get test Acc 0.1135
-  Iter = args.iter
-  model = trainer.Train (Iter)
+  # --- Save Weights ---
+  weights_file = f"weights_{args.model}_{args.opti}.pkl"
+  print(f"\nSaving weights to {weights_file}")
+  with open(weights_file, 'wb') as f:
+    pickle.dump(model.get_params(), f)
 
-  # save params
-  weights = model.get_params()
-  with open ('~weights.pkl','wb') as f:
-    pickle.dump (weights, f)
+  # --- Plotting (Non-blocking) ---
+  plot_file = f"training_loss_{args.model}_{args.opti}.png"
+  plt.figure(figsize=(10, 6))
+  plt.plot(range(0, len(trainer.losses) * 100, 100), trainer.losses)
+  plt.xlabel('Iterations (per 100)')
+  plt.ylabel('Training Loss')
+  plt.title(f'Training Loss - {args.model} ({args.opti})')
+  plt.grid(True)
+  plt.savefig(plot_file)
+  print(f"Saved loss plot to {plot_file}")
+  plt.close()  # Prevents hanging
 
-  #######################################
-  ############  TODO   ##################
-  #######################################
+  # --- Evaluation ---
+  print("\n=== Final Evaluation ===")
+  determine_Train_Acc(model, X_train, Y_train)
+  determine_Test_Acc(model, X_test, Y_test)
 
-  # plot training loss over iterations
-
-
-  determine_Train_Acc (model, X_train, Y_train)
-  determine_Test_Acc (model, X_test, Y_test)
+  print("\nTraining completed successfully!")
